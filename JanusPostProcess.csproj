@@ -60,6 +60,7 @@
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="README.md" />
     <None Include="settings.json" />
   </ItemGroup>
   <ItemGroup>
