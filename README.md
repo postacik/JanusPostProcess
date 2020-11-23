@@ -28,3 +28,5 @@ After compiling the project, copy settings.json file into your Bin folder (where
 * "VideoFileWidth": The width of the video file the recordings will be merged into
 * "VideoFileHeight": The width of the video file the recordings will be merged into
 * "BackgroundColor": Background color of the canvas of the video file
+
+Since ffprobe is used for determining the video file dimensions on the Linux host, it must have been installed on the remote machine.
