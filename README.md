@@ -20,7 +20,7 @@ After compiling the project, copy settings.json file into your Bin folder (where
 ```
 * "Januspprec": The path to your janus-pp-rec binary
 * "RecordingPath": The path where the video room was recorded
-* "DownloadDirectory": Local path on your machine where the media files are going to be downloaded and processed. Use \\ for \ character
+* "DownloadDirectory": Local path on your machine where the media files are going to be downloaded and processed. Use \\\\ for \ character
 * "RoomName": The name of the video room
 * "JanusHost": Host name or IP address of Janus server
 * "HostUser": User name on the server which has rights to access the media files
