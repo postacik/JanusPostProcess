@@ -1,0 +1,55 @@
+/opt/janus/bin/janus-pp-rec ./videoroom-1234-user-7143679735945211-1605905237035876-audio.mjr q1.opus
+/opt/janus/bin/janus-pp-rec ./videoroom-1234-user-7143679735945211-1605905237035876-video.mjr q1.webm
+/opt/janus/bin/janus-pp-rec ./videoroom-1234-user-1706784297326282-1605905240255583-audio.mjr q2.opus
+/opt/janus/bin/janus-pp-rec ./videoroom-1234-user-1706784297326282-1605905240255583-video.mjr q2.webm
+
+#scale
+ffmpeg -y -i q1.webm -vf "scale=640:720:force_original_aspect_ratio=increase,crop=640:720" -movflags faststart -profile:v high -r 25 q1.mp4
+ffmpeg -y -i q2.webm -vf "scale=640:720:force_original_aspect_ratio=increase,crop=640:720" -movflags faststart -profile:v high -r 25 q2.mp4
+
+#overlay
+ffmpeg -y -i q1.mp4 -i q2.mp4 -i q1.opus -i q2.opus -filter_complex "[0:v]pad=2*iw:ih[step1];[1:v]setpts=PTS-STARTPTS+12.665/TB[step2];[step1][step2]overlay=x=W/2[v]; [2:a]adelay=12932|12932[audio1];[3:a]adelay=12656|12656[audio2];[audio1][audio2]amix=inputs=2[a]" -map "[v]" -map "[a]" q-mixed.mp4
+
+#4 piece overlay
+ffmpeg -y -i q1.mp4 -i q2.mp4 -i q1.opus -i q2.opus -i q2.mp4 -i q2.mp4 -filter_complex "[0:v]pad=3*iw:2*ih[v1];[1:v]setpts=PTS-STARTPTS+12.665/TB[v2];[4:v]setpts=PTS-STARTPTS+10.000/TB[v3];[5:v]setpts=PTS-STARTPTS+11.000/TB[v4];[v1][v2]overlay=x=W/3[step1];[step1][v3]overlay=x=W/3*2[step2];[step2][v4]overlay=y=H/2[v]; [2:a]adelay=12932|12932[audio1];[3:a]adelay=12656|12656[audio2];[audio1][audio2]amix=inputs=2[a]" -map "[v]" -map "[a]" q-mixed2.mp4
+
+
+#scale + overlay test at one shot -> had problems during playing the output
+ffmpeg -y -i q1.webm -i q2.webm -i q1.opus -i q2.opus -filter_complex "[0:v]scale=640:720:force_original_aspect_ratio=increase,crop=640:720,pad=2*iw:ih[step1];[1:v]scale=640:720:force_original_aspect_ratio=increase,crop=640:720,setpts=PTS-STARTPTS+12.665/TB[step2];[step1][step2]overlay=x=W/2[v]; [2:a]adelay=12932|12932[audio1];[3:a]adelay=12656|12656[audio2];[audio1][audio2]amix=inputs=2[a]" -map "[v]" -map "[a]" -movflags faststart -profile:v high -r 25 q-mixed.mp4
+
+
+#get resolution of video
+ffprobe -v quiet -select_streams v:0 -show_entries stream=width,height -of csv=p=0 q1.webm
+
+#if the video is multiple resolution which changes from portrait (320x640) to landscape(640x320) then the resolution is square like 640x640
+
+#How to decide if we should increase or decrease
+#Example: Target resolution is 640:720
+#multi.webm 640:640 - One of the target size is greater, so increase
+ffmpeg -y -i multi.webm -vf "scale=640:720:force_original_aspect_ratio=increase,crop=640:720" -movflags faststart -profile:v high -r 25 multi.mp4
+#portr.webm 320:640 - Both of the target sizes are greater, so increase
+ffmpeg -y -i portr.webm -vf "scale=640:720:force_original_aspect_ratio=increase,crop=640:720" -movflags faststart -profile:v high -r 25 portr.mp4
+#lands.webm 640:320 - One of the target size is greater, so increase
+ffmpeg -y -i lands.webm -vf "scale=640:720:force_original_aspect_ratio=increase,crop=640:720" -movflags faststart -profile:v high -r 25 lands.mp4
+#mix portr with lands
+ffmpeg -y -i portr.mp4 -i lands.mp4 -filter_complex "[0:v]pad=2*iw:ih[step1];[1:v]setpts=PTS-STARTPTS+3.865/TB[step2]; [step1][step2]overlay=x=W/2[v]" -map "[v]"  finalx.mp4
+
+#Example: Target resolution is 320:360
+#multi.webm 640:640 - Target is smaller, so decrease
+ffmpeg -y -i multi.webm -vf "scale=320:360:force_original_aspect_ratio=decrease,pad=320:360:-1:-1:color=blue" -movflags faststart -profile:v high -r 25 multi.mp4
+#portr.webm 320:640 - Target is smaller, so decrease
+ffmpeg -y -i portr.webm -vf "scale=320:360:force_original_aspect_ratio=decrease,pad=320:360:-1:-1:color=blue" -movflags faststart -profile:v high -r 25 portr.mp4
+#lands.webm 640:320 - Target is smaller, so decrease
+ffmpeg -y -i lands.webm -vf "scale=320:360:force_original_aspect_ratio=decrease,pad=320:360:-1:-1:color=blue" -movflags faststart -profile:v high -r 25 lands.mp4
+#mix portr with lands
+ffmpeg -y -i portr.mp4 -i lands.mp4 -filter_complex "[0:v]pad=2*iw:ih[step1];[1:v]setpts=PTS-STARTPTS+3.865/TB[step2]; [step1][step2]overlay=x=W/2[v]" -map "[v]"  finaly.mp4
+
+
+Compose output by putting two input videos side to side:
+ffmpeg -i left.avi -i right.avi -filter_complex "
+nullsrc=size=200x100 [background];
+[0:v] setpts=PTS-STARTPTS, scale=100x100 [left];
+[1:v] setpts=PTS-STARTPTS, scale=100x100 [right];
+[background][left]       overlay=shortest=1       [background+left];
+[background+left][right] overlay=shortest=1:x=100 [left+right]
+"

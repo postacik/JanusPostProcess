@@ -1,0 +1,12 @@
+{
+  "Januspprec": "/opt/janus/bin/janus-pp-rec",
+  "RecordingPath": "/opt/janus/record",
+  "DownloadDirectory": "C:\\JanusDownload",
+  "RoomName": "videoroom-1234",
+  "JanusHost": "yourhostname",
+  "HostUser": "user",
+  "HostPassword": "password",
+  "VideoFileWidth": 640,
+  "VideoFileHeight": 480,
+  "BackgroundColor":  "black"
+}
